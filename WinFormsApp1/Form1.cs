@@ -1,6 +1,9 @@
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Data;
+using System.Diagnostics.Metrics;
 using System.Windows.Forms;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp1
 {
@@ -8,9 +11,29 @@ namespace WinFormsApp1
     {
         // declaration de la variable personne
         private List<string[]> personnes;
+        private string connectionString = "Data Source=np:\\\\.\\pipe\\LOCALDB#FA9037AD\\tsql\\query;Initial Catalog=ContactsDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
         public Form1()
         {
             InitializeComponent();
+
+            using (SqlConnection connection  = new SqlConnection(connectionString))
+            {
+                // Permet l'ouverture de la connexion a la bdd
+                connection.Open();
+                
+                // La requete SQL que nous allons executer
+                string query = "SELECT * FROM Contacts;";
+
+                SqlDataAdapter sqlDataAdapter = new SqlDataAdapter(query, connection);
+
+                DataTable dt = new DataTable();
+
+                // Recupere les Rows retournees par la requete SQL contenue dans la variable
+                // Query
+                sqlDataAdapter.Fill(dt);
+
+                this.dgContacts.DataSource = dt;
+            }    
 
             // Creation du bouton
             DataGridViewButtonColumn btnSupprimer = new DataGridViewButtonColumn();
@@ -22,25 +45,9 @@ namespace WinFormsApp1
 
             dgContacts.AllowUserToAddRows = false;
 
-            personnes = new List<string[]>
-            {
-                new string[] { "Jean", "25" },
-                new string[] { "Paul", "30" },
-                new string[] { "Marie", "28" }
-            };
+   
 
-            DataTable dataTable = new DataTable();
-
-
-            dataTable.Columns.Add("Nom", typeof(string));
-            dataTable.Columns.Add("Age", typeof(string));
-
-            foreach (string[] personne in personnes)
-            {
-                dataTable.Rows.Add(personne[0], personne[1]);
-            }
-
-            this.dgContacts.DataSource = dataTable;
+             // this.dgContacts.DataSource = dataTable;
             this.dgContacts.Columns.Add(btnSupprimer);
 
 
@@ -63,20 +70,22 @@ namespace WinFormsApp1
             else
             {
                 // Ajout d'une nouvelle personne
-                personnes.Add(new string[] { nom, age });
-
-                DataTable dataTable = new DataTable();
-
-
-                dataTable.Columns.Add("Nom", typeof(string));
-                dataTable.Columns.Add("Age", typeof(string));
-
-                foreach (string[] personne in personnes)
+                using (SqlConnection connection  = new SqlConnection (connectionString))
                 {
-                    dataTable.Rows.Add(personne[0], personne[1]);
-                }
+                    connection.Open();
+                    string query = "INSERT INTO Contacts (nom, email) VALUES ( @nom , @email )";
+                    SqlCommand cmd = new SqlCommand(query, connection);
 
-                this.dgContacts.DataSource = dataTable;
+                    cmd.Parameters.AddWithValue("@nom", nom);
+                    cmd.Parameters.AddWithValue("@email", email);
+
+                    cmd.ExecuteNonQuery();
+                    var dt = new DataTable();
+                    string selectQuery = "SELECT * FROM Contacts";
+                    SqlDataAdapter da = new SqlDataAdapter(selectQuery, connection);
+                    da.Fill(dt);
+                    dgContacts.DataSource = dt;
+                }
             }
             // Afficher ces valeurs dans une messageBox
         }
@@ -137,21 +146,25 @@ namespace WinFormsApp1
 
             if (e.ColumnIndex == dgContacts.Columns["btnSupprimer"].Index)
             {
-                personnes.RemoveAt(e.RowIndex);
-
-
-                DataTable dataTable = new DataTable();
-
-
-                dataTable.Columns.Add("Nom", typeof(string));
-                dataTable.Columns.Add("Age", typeof(string));
-
-                foreach (string[] personne in personnes)
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    dataTable.Rows.Add(personne[0], personne[1]);
+                // -recuperer l'id du contact a supprimer lors du click sur le bouton supprimer
+                int contactId = (int) this.dgContacts.Rows[e.RowIndex].Cells["ID"].Value;
+
+                //- Demander confirmation a l'utilisateur (voir ppt)
+                string query = "DELETE FROM Contacts WHERE ID=@ID";
+                    //- Preparer la requete
+                    conn.Open();
+                    SqlCommand commande = new SqlCommand(query, conn);
+                    commande.Parameters.AddWithValue("@ID", contactId);
+                    commande.ExecuteNonQuery();
+
+                //-Mettre a jour la vue
+
+
                 }
 
-                this.dgContacts.DataSource = dataTable;
+
 
             }
         }
