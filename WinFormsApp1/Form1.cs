@@ -11,7 +11,8 @@ namespace WinFormsApp1
     {
         // declaration de la variable personne
         private List<string[]> personnes;
-        private string connectionString = "Data Source=np:\\\\.\\pipe\\LOCALDB#FA9037AD\\tsql\\query;Initial Catalog=ContactsDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        private UpdateForm UpdateFormInstance;
+        private string connectionString = "Data Source=np:\\\\.\\pipe\\LOCALDB#61B8582D\\tsql\\query;Initial Catalog=ContactsDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
         public Form1()
         {
             InitializeComponent();
@@ -35,19 +36,27 @@ namespace WinFormsApp1
                 this.dgContacts.DataSource = dt;
             }    
 
-            // Creation du bouton
+            // Creation du bouton supprimer
             DataGridViewButtonColumn btnSupprimer = new DataGridViewButtonColumn();
             btnSupprimer.Text = "Supprimer";
             btnSupprimer.HeaderText = "Action";
             btnSupprimer.Name = "btnSupprimer";
             btnSupprimer.UseColumnTextForButtonValue = true; // afficher le texte dans le bouton
 
+            // Creation du bouton modifier
+            DataGridViewButtonColumn btnModifier = new DataGridViewButtonColumn();
+            btnModifier.Text = "Modifier";
+            btnModifier.HeaderText = "Action";
+            btnModifier.Name = "btnModifier";
+            btnModifier.UseColumnTextForButtonValue = true; // afficher le texte dans le bouton
+
 
             dgContacts.AllowUserToAddRows = false;
 
-   
 
-             // this.dgContacts.DataSource = dataTable;
+
+            // this.dgContacts.DataSource = dataTable;
+            this.dgContacts.Columns.Add(btnModifier);
             this.dgContacts.Columns.Add(btnSupprimer);
 
 
@@ -167,6 +176,20 @@ namespace WinFormsApp1
 
 
             }
+
+            if (e.ColumnIndex == dgContacts.Columns["btnModifier"].Index)
+            {
+                int contactId = (int)this.dgContacts.Rows[e.RowIndex].Cells["ID"].Value;
+
+                UpdateFormInstance = new UpdateForm(contactId);
+                
+                // Passer les donnees au form de modification
+                UpdateFormInstance.Show();
+
+                
+
+            }
+
         }
 
 
